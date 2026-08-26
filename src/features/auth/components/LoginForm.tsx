@@ -6,9 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import { login } from "../api/auth.api";
+import useRecaptcha from "../hooks/useRecaptcha";
+const siteKey = import.meta.env.VITE_REACPTCHA_SITE_KEY;
 
 export function LoginForm() {
   const navigate = useNavigate();
+
+  const { executeRecaptcha, isLoaded } = useRecaptcha(siteKey);
 
   const form = useForm<LoginFormValues>({
     defaultValues: {
@@ -27,12 +31,22 @@ export function LoginForm() {
   const { mutate, error, isPending, isError } = useMutation({
     mutationFn: login,
     onSuccess: () => {
-      navigate("/user", {replace: true});
+      navigate("/user", { replace: true });
     },
   });
 
-  const onSubmit = (values: LoginFormValues) => {
-    mutate(values);
+  const onSubmit = async (values: LoginFormValues) => {
+    if (isLoaded) {
+      try {
+        const token = await executeRecaptcha("login");
+        const newVal = { ...values, token };
+        mutate(newVal);
+      } catch (error) {
+        console.log("Error", error);
+      }
+    } else {
+      console.log("Error: grecaptcha not loded");
+    }
   };
 
   return (
