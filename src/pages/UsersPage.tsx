@@ -1,12 +1,37 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import Table, { type Column } from "../components/ui/Table";
 import { useLogout, useUser } from "../features/auth/hooks/useAuth";
 import type { User } from "../features/auth/api/auth.types";
 import { Button } from "../components/ui/Button";
+import { useMutation } from "@tanstack/react-query";
+import { paymentorder } from "../features/payment/api/payment.api";
+import { usePaymentCheckout } from "../features/payment/hooks/usePaymentCheckout";
 
 function UsersPage() {
   const { data } = useUser();
   const { mutate: logout, isPending } = useLogout();
+  const { handlePaymentCheckout } = usePaymentCheckout();
+  const { mutate: createOrder, isPending: creatingOrder } = useMutation({
+    mutationFn: paymentorder,
+  });
+
+  const handlePayment = useCallback(
+    (value: string) => {
+      createOrder(
+        {
+          amount: 100000,
+          currency: "INR",
+          receipt: value,
+        },
+        {
+          onSuccess: (data) => {
+            handlePaymentCheckout(100000, data?.order?.id);
+          },
+        },
+      );
+    },
+    [createOrder, handlePaymentCheckout],
+  );
 
   const columns: Column<User>[] = useMemo(() => {
     return [
@@ -25,8 +50,24 @@ function UsersPage() {
           return new Date(String(value)).toLocaleDateString("en-IN");
         },
       },
+      {
+        key: "id",
+        header: "Payment",
+        render: (value: string) => {
+          return (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handlePayment(value)}
+              disabled={creatingOrder}
+            >
+              {creatingOrder ? "Wait..." : "Pay ₹1000"}
+            </Button>
+          );
+        },
+      },
     ];
-  }, []);
+  }, [creatingOrder, handlePayment]);
 
   return (
     <div>
