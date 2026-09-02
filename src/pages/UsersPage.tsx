@@ -10,7 +10,11 @@ import { usePaymentCheckout } from "../features/payment/hooks/usePaymentCheckout
 function UsersPage() {
   const { data } = useUser();
   const { mutate: logout, isPending } = useLogout();
-  const { handlePaymentCheckout } = usePaymentCheckout();
+  const {
+    handlePaymentCheckout,
+    isPending: paymentverifypending,
+    isSuccess,
+  } = usePaymentCheckout();
   const { mutate: createOrder, isPending: creatingOrder } = useMutation({
     mutationFn: paymentorder,
   });
@@ -59,15 +63,15 @@ function UsersPage() {
               type="button"
               variant="outline"
               onClick={() => handlePayment(value)}
-              disabled={creatingOrder}
+              disabled={creatingOrder || paymentverifypending}
             >
-              {creatingOrder ? "Wait..." : "Pay ₹1000"}
+              {creatingOrder || paymentverifypending ? "Wait..." : "Pay ₹1000"}
             </Button>
           );
         },
       },
     ];
-  }, [creatingOrder, handlePayment]);
+  }, [creatingOrder, handlePayment, paymentverifypending]);
 
   return (
     <div>
@@ -82,6 +86,11 @@ function UsersPage() {
           {isPending ? "Logging out..." : "Logout"}
         </Button>
       </div>
+      {isSuccess ? (
+        <span className="text-green-500 text-sm font-medium my-2">
+          Amount Paid successfully!
+        </span>
+      ) : null}
       <Table
         columns={columns}
         data={data || []}

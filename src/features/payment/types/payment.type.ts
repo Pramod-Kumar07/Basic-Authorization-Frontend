@@ -81,3 +81,9 @@ export interface Order {
   receipt: string | null;
   status: string;
 }
+
+export interface PaymentVerificationInput {
+  razorpay_order_id: string;
+  razorpay_signature: string;
+  razorpay_payment_id: string;
+}

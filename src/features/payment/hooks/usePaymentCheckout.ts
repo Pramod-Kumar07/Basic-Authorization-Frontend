@@ -3,10 +3,19 @@ import type {
   RazorpayFailedResponse,
   RazorpayPaymentResponse,
 } from "../types/payment.type";
+import { useMutation } from "@tanstack/react-query";
+import { paymentVerification } from "../api/payment.api";
 const API_KEY = import.meta.env.VITE_RZPAY_API_KEY;
 
 export const usePaymentCheckout = () => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const {
+    mutate: verifyPayment,
+    isPending,
+    isSuccess,
+  } = useMutation({
+    mutationFn: paymentVerification,
+  });
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -35,7 +44,7 @@ export const usePaymentCheckout = () => {
       order_id: orderId,
 
       handler: (response: RazorpayPaymentResponse) => {
-        console.log(response);
+        verifyPayment(response);
       },
 
       prefill: {
@@ -57,5 +66,5 @@ export const usePaymentCheckout = () => {
 
     razorpay.open();
   };
-  return { isLoaded, handlePaymentCheckout };
+  return { isLoaded, handlePaymentCheckout, isPending, isSuccess };
 };
